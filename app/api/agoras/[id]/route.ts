@@ -5,6 +5,7 @@ import { z } from "zod";
 
 const AgoraUpdateSchema = z.object({
   name: z.string().min(1, "Name is required").max(100).optional(),
+  description: z.string().optional(),
   personaIds: z.array(z.string()).min(1, "At least one persona is required").optional(),
 });
 
@@ -106,7 +107,7 @@ export async function PATCH(
       );
     }
 
-    const { name, personaIds } = validation.data;
+    const { name, description, personaIds } = validation.data;
 
     // If personaIds provided, verify ownership
     if (personaIds) {
@@ -138,9 +139,13 @@ export async function PATCH(
     }
 
     // Update agora
+    const updateData: { name?: string; description?: string | null } = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description || null;
+
     const agora = await db.agora.update({
       where: { id: params.id },
-      data: name ? { name } : {},
+      data: updateData,
       include: {
         personas: {
           include: {
