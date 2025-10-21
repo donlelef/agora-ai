@@ -117,144 +117,222 @@ export function PostInputForm({ onSubmit, isLoading }: PostInputFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="post-idea"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Post Idea
-            </label>
-            <textarea
-              id="post-idea"
-              value={idea}
-              onChange={(e) => setIdea(e.target.value)}
-              placeholder="Example: Announcing our new AI-powered analytics feature that helps users understand their data better..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
-              rows={4}
-              disabled={isLoading}
-            />
-            <div className="mt-2 flex items-center justify-between">
-              <span
-                className={`text-sm ${
-                  idea.length > 500
-                    ? "text-red-600"
-                    : idea.length > 400
-                    ? "text-yellow-600"
-                    : "text-gray-500"
-                }`}
-              >
-                {idea.length} / 500 characters
-              </span>
-              {error && <span className="text-sm text-red-600">{error}</span>}
+    <div className="w-full max-w-3xl mx-auto">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Main Composer Card */}
+        <Card className="shadow-lg hover:shadow-xl transition-shadow">
+          <CardContent className="pt-6">
+            {/* Compose Post Section */}
+            <div className="flex space-x-3 mb-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                  Y
+                </div>
+              </div>
+              <div className="flex-1">
+                <textarea
+                  id="post-idea"
+                  value={idea}
+                  onChange={(e) => setIdea(e.target.value)}
+                  placeholder="What's your post idea?"
+                  className="w-full px-0 py-2 text-lg border-none focus:ring-0 focus:outline-none resize-none placeholder-gray-500"
+                  rows={5}
+                  disabled={isLoading}
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label
-              htmlFor="agora"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Select Agora (Target Audience)
-            </label>
-            <select
-              id="agora"
-              value={agoraId}
-              onChange={(e) => {
-                setAgoraId(e.target.value);
-                const selected = agoras.find((a) => a.id === e.target.value);
-                if (selected) {
-                  setReactionCount(
-                    Math.min(reactionCount, selected.personas.length)
-                  );
-                }
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={isLoading}
-            >
-              {agoras.map((agora) => (
-                <option key={agora.id} value={agora.id}>
-                  {agora.name} ({agora.personas.length} personas)
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="reactions"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Number of Reactions: {reactionCount}
-            </label>
-            <input
-              id="reactions"
-              type="range"
-              min="1"
-              max={Math.min(maxReactions, 50)}
-              value={reactionCount}
-              onChange={(e) => setReactionCount(Number(e.target.value))}
-              className="w-full"
-              disabled={isLoading}
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>1</span>
-              <span>{Math.min(maxReactions, 50)} (max)</span>
+            {/* Character Count */}
+            <div className="flex items-center justify-end mb-4 px-3">
+              <div className="flex items-center space-x-2">
+                <div className={`relative w-8 h-8 ${idea.length > 0 ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
+                  <svg className="transform -rotate-90" width="32" height="32">
+                    <circle
+                      cx="16"
+                      cy="16"
+                      r="14"
+                      stroke="#e5e7eb"
+                      strokeWidth="3"
+                      fill="none"
+                    />
+                    <circle
+                      cx="16"
+                      cy="16"
+                      r="14"
+                      stroke={idea.length > 500 ? "#ef4444" : idea.length > 400 ? "#f59e0b" : "#1d9bf0"}
+                      strokeWidth="3"
+                      fill="none"
+                      strokeDasharray={`${(idea.length / 500) * 87.96} 87.96`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  {idea.length > 400 && (
+                    <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${idea.length > 500 ? 'text-red-600' : 'text-yellow-600'}`}>
+                      {500 - idea.length}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            disabled={isLoading || idea.trim().length < 10 || !agoraId}
-            className="w-full"
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center">
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Running simulation...
-              </span>
-            ) : (
-              "Run Simulation"
+            {error && (
+              <div className="mb-4 px-3">
+                <span className="text-sm text-red-600 font-medium">{error}</span>
+              </div>
             )}
-          </Button>
 
-          {isLoading && (
-            <div className="text-center text-sm text-gray-600">
-              <p>
-                Generating 10 variants and simulating {reactionCount} persona
-                reactions for each...
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                This may take 1-2 minutes
-              </p>
+            <div className="border-t border-gray-200 pt-4">
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={isLoading || idea.trim().length < 10 || !agoraId}
+                className="w-full bg-[#1d9bf0] hover:bg-[#1a8cd8] text-white font-bold py-3 px-6 rounded-full shadow-md hover:shadow-lg transition-all disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Running simulation...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Run Simulation
+                  </span>
+                )}
+              </Button>
             </div>
-          )}
-        </form>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+
+        {/* Settings Card */}
+        <Card className="shadow-md">
+          <CardContent className="py-4">
+            <div className="space-y-4">
+              {/* Agora Selection */}
+              <div>
+                <label
+                  htmlFor="agora"
+                  className="block text-sm font-semibold text-gray-700 mb-2 flex items-center space-x-2"
+                >
+                  <svg className="w-5 h-5 text-[#1d9bf0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <span>Target Audience</span>
+                </label>
+                <select
+                  id="agora"
+                  value={agoraId}
+                  onChange={(e) => {
+                    setAgoraId(e.target.value);
+                    const selected = agoras.find((a) => a.id === e.target.value);
+                    if (selected) {
+                      setReactionCount(
+                        Math.min(reactionCount, selected.personas.length)
+                      );
+                    }
+                  }}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1d9bf0] focus:border-transparent transition-all font-medium text-gray-700"
+                  disabled={isLoading}
+                >
+                  {agoras.map((agora) => (
+                    <option key={agora.id} value={agora.id}>
+                      {agora.name} ({agora.personas.length} personas)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Reaction Count Slider */}
+              <div>
+                <label
+                  htmlFor="reactions"
+                  className="block text-sm font-semibold text-gray-700 mb-2 flex items-center justify-between"
+                >
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-5 h-5 text-[#1d9bf0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <span>Number of Reactions</span>
+                  </div>
+                  <span className="text-[#1d9bf0] font-bold text-base">{reactionCount}</span>
+                </label>
+                <input
+                  id="reactions"
+                  type="range"
+                  min="1"
+                  max={Math.min(maxReactions, 50)}
+                  value={reactionCount}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#1d9bf0]"
+                  disabled={isLoading}
+                  onChange={(e) => setReactionCount(Number(e.target.value))}
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-2 px-1">
+                  <span className="font-medium">1</span>
+                  <span className="font-medium">{Math.min(maxReactions, 50)}</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {isLoading && (
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-md">
+            <CardContent className="py-6">
+              <div className="text-center">
+                <div className="flex justify-center mb-3">
+                  <svg
+                    className="animate-spin h-10 w-10 text-[#1d9bf0]"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                </div>
+                <p className="text-base font-semibold text-gray-700 mb-1">
+                  Generating 10 variants and simulating {reactionCount} persona reactions for each...
+                </p>
+                <p className="text-sm text-gray-600">
+                  This may take 1-2 minutes. Grab a coffee! ☕
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </form>
+    </div>
   );
 }
 

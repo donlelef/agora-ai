@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { Card, CardHeader, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
+import { TwitterPost } from "./twitter-post";
+import { TwitterReply } from "./twitter-reply";
 import type { SimulationResult } from "@/core/types";
 
 interface SimulationResultsProps {
@@ -13,6 +15,7 @@ export function SimulationResults({ results }: SimulationResultsProps) {
   const [selectedVariant, setSelectedVariant] = useState(
     results.bestVariantIndex
   );
+  const [showAllReplies, setShowAllReplies] = useState(false);
 
   const currentVariant = results.variants[selectedVariant];
 
@@ -37,201 +40,205 @@ export function SimulationResults({ results }: SimulationResultsProps) {
   };
 
   const sentimentCounts = getSentimentCounts();
+  const totalReplies = currentVariant.replies.length;
+  const visibleReplies = showAllReplies ? currentVariant.replies : currentVariant.replies.slice(0, 10);
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
+    <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* Winner Announcement */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300">
-        <CardContent className="py-6">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              🏆 Best Performing Variant
-            </h2>
-            <p className="text-lg text-gray-700 mb-4">
-              Variant #{results.bestVariantIndex + 1} scored the highest with an
-              NPS of {results.variants[results.bestVariantIndex].nps}
-            </p>
-            <div className="bg-white rounded-lg p-4 max-w-2xl mx-auto shadow-sm">
-              <p className="text-base text-gray-900">
-                {results.variants[results.bestVariantIndex].text}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-gradient-to-r from-[#1d9bf0] to-[#1a8cd8] rounded-2xl p-6 text-white shadow-lg">
+        <div className="text-center">
+          <div className="text-5xl mb-3">🏆</div>
+          <h2 className="text-2xl font-bold mb-2">
+            Best Performing Variant
+          </h2>
+          <p className="text-lg opacity-90 mb-4">
+            Variant #{results.bestVariantIndex + 1} scored the highest with an NPS of{" "}
+            <span className="font-bold text-2xl">{results.variants[results.bestVariantIndex].nps}</span>
+          </p>
+        </div>
+      </div>
 
-      {/* Variant Selector */}
-      <Card>
-        <CardHeader>
-          <h3 className="text-xl font-bold text-gray-900">
-            All Variants - Click to Explore
+      {/* Variant Selector Tabs */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="border-b border-gray-200 px-4 py-3 bg-gray-50">
+          <h3 className="text-lg font-bold text-gray-900">
+            All Variants
           </h3>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        </div>
+        <div className="p-4">
+          <div className="flex flex-wrap gap-2">
             {results.variants.map((variant, index) => (
               <button
                 key={index}
-                onClick={() => setSelectedVariant(index)}
-                className={`text-left p-4 rounded-lg border-2 transition-all ${
+                onClick={() => {
+                  setSelectedVariant(index);
+                  setShowAllReplies(false);
+                }}
+                className={`relative px-4 py-2 rounded-full font-semibold transition-all ${
                   selectedVariant === index
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
+                    ? "bg-[#1d9bf0] text-white shadow-md"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <span className="font-semibold text-gray-900">
-                    Variant #{index + 1}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {index === results.bestVariantIndex && (
-                      <Badge variant="success">Winner</Badge>
-                    )}
-                    <Badge variant={getNPSColor(variant.nps)}>
-                      NPS: {variant.nps}
-                    </Badge>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span>Variant {index + 1}</span>
+                  {index === results.bestVariantIndex && (
+                    <span className="text-yellow-300">🏆</span>
+                  )}
+                  <Badge
+                    variant={getNPSColor(variant.nps)}
+                    className={selectedVariant === index ? "bg-white/20 border-white/30 text-white" : ""}
+                  >
+                    {variant.nps}
+                  </Badge>
                 </div>
-                <p className="text-sm text-gray-700 line-clamp-2">
-                  {variant.text}
-                </p>
               </button>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Detailed Analysis for Selected Variant */}
-      <Card>
-        <CardHeader className="bg-gray-50">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-gray-900">
-              Variant #{selectedVariant + 1} - Detailed Analysis
-            </h3>
-            <Badge variant={getNPSColor(currentVariant.nps)} className="text-base px-3 py-1">
-              NPS: {currentVariant.nps}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Post Text */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">Post</h4>
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <p className="text-base text-gray-900">{currentVariant.text}</p>
+      {/* Sentiment Overview */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          Sentiment Overview
+        </h3>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+            <div className="text-4xl font-bold text-green-600">
+              {sentimentCounts.positive}
+            </div>
+            <div className="text-sm text-green-700 mt-1 font-medium">😍 Positive</div>
+            <div className="text-xs text-green-600 mt-1">
+              {Math.round((sentimentCounts.positive / totalReplies) * 100)}%
             </div>
           </div>
+          <div className="text-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+            <div className="text-4xl font-bold text-gray-600">
+              {sentimentCounts.neutral}
+            </div>
+            <div className="text-sm text-gray-700 mt-1 font-medium">😐 Neutral</div>
+            <div className="text-xs text-gray-600 mt-1">
+              {Math.round((sentimentCounts.neutral / totalReplies) * 100)}%
+            </div>
+          </div>
+          <div className="text-center p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-xl border border-red-200">
+            <div className="text-4xl font-bold text-red-600">
+              {sentimentCounts.negative}
+            </div>
+            <div className="text-sm text-red-700 mt-1 font-medium">😞 Negative</div>
+            <div className="text-xs text-red-600 mt-1">
+              {Math.round((sentimentCounts.negative / totalReplies) * 100)}%
+            </div>
+          </div>
+        </div>
 
-          {/* Sentiment Distribution */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">
-              Sentiment Distribution (50 personas)
+        {/* Key Insights */}
+        <div className="space-y-3">
+          <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                ✓
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-bold text-green-800 mb-1">
+                  What's Working
+                </div>
+                <p className="text-sm text-gray-700">
+                  {currentVariant.highlights.positive}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold">
+                ○
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-bold text-gray-800 mb-1">
+                  Neutral Ground
+                </div>
+                <p className="text-sm text-gray-700">
+                  {currentVariant.highlights.neutral}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 bg-red-50 rounded-xl border border-red-200">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">
+                ✗
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-bold text-red-800 mb-1">
+                  Areas for Improvement
+                </div>
+                <p className="text-sm text-gray-700">
+                  {currentVariant.highlights.negative}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Twitter-like Post and Replies */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="border-b border-gray-200 px-4 py-3 bg-gray-50">
+          <h3 className="text-lg font-bold text-gray-900">
+            Post Preview
+          </h3>
+        </div>
+        
+        {/* Main Post */}
+        <div className="p-4 border-b-8 border-gray-100">
+          <TwitterPost text={currentVariant.text} verified={true} />
+        </div>
+
+        {/* Replies Section */}
+        <div>
+          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+            <h4 className="text-sm font-bold text-gray-700">
+              Replies ({totalReplies})
             </h4>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-                <div className="text-3xl font-bold text-green-700">
-                  {sentimentCounts.positive}
-                </div>
-                <div className="text-sm text-green-600 mt-1">Positive</div>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="text-3xl font-bold text-gray-700">
-                  {sentimentCounts.neutral}
-                </div>
-                <div className="text-sm text-gray-600 mt-1">Neutral</div>
-              </div>
-              <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
-                <div className="text-3xl font-bold text-red-700">
-                  {sentimentCounts.negative}
-                </div>
-                <div className="text-sm text-red-600 mt-1">Negative</div>
-              </div>
-            </div>
           </div>
-
-          {/* Key Highlights */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">
-              Key Insights
-            </h4>
-            <div className="space-y-3">
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <div className="flex items-start">
-                  <span className="text-green-600 font-semibold mr-2">✓</span>
-                  <div>
-                    <div className="text-xs font-semibold text-green-700 uppercase mb-1">
-                      Positive
-                    </div>
-                    <p className="text-sm text-gray-700">
-                      {currentVariant.highlights.positive}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex items-start">
-                  <span className="text-gray-600 font-semibold mr-2">○</span>
-                  <div>
-                    <div className="text-xs font-semibold text-gray-700 uppercase mb-1">
-                      Neutral
-                    </div>
-                    <p className="text-sm text-gray-700">
-                      {currentVariant.highlights.neutral}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                <div className="flex items-start">
-                  <span className="text-red-600 font-semibold mr-2">✗</span>
-                  <div>
-                    <div className="text-xs font-semibold text-red-700 uppercase mb-1">
-                      Negative
-                    </div>
-                    <p className="text-sm text-gray-700">
-                      {currentVariant.highlights.negative}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="divide-y divide-gray-200">
+            {visibleReplies.map((reply, idx) => (
+              <TwitterReply
+                key={idx}
+                text={reply.reply}
+                personaDescription={reply.personaDescription}
+                sentiment={reply.sentiment}
+                timestamp={`${Math.floor(Math.random() * 60) + 1}m`}
+              />
+            ))}
           </div>
-
-          {/* Sample Replies */}
-          <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">
-              Sample Replies (showing 10 of 50)
-            </h4>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {currentVariant.replies.slice(0, 10).map((reply, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 bg-gray-50 rounded-lg border border-gray-200"
-                >
-                  <div className="flex items-start justify-between mb-1">
-                    <span className="text-xs font-medium text-gray-600">
-                      {reply.personaDescription}
-                    </span>
-                    <Badge
-                      variant={
-                        reply.sentiment === "positive"
-                          ? "success"
-                          : reply.sentiment === "negative"
-                          ? "danger"
-                          : "default"
-                      }
-                      className="ml-2"
-                    >
-                      {reply.sentiment}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-gray-800">{reply.reply}</p>
-                </div>
-              ))}
+          
+          {!showAllReplies && totalReplies > 10 && (
+            <div className="p-4 text-center border-t border-gray-200">
+              <button
+                onClick={() => setShowAllReplies(true)}
+                className="text-[#1d9bf0] hover:text-[#1a8cd8] font-semibold text-sm transition-colors"
+              >
+                Show all {totalReplies} replies
+              </button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          )}
+          
+          {showAllReplies && (
+            <div className="p-4 text-center border-t border-gray-200">
+              <button
+                onClick={() => setShowAllReplies(false)}
+                className="text-[#1d9bf0] hover:text-[#1a8cd8] font-semibold text-sm transition-colors"
+              >
+                Show less
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

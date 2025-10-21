@@ -158,23 +158,32 @@ export default function AgorasPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">
             Manage Agoras
           </h1>
-          <p className="text-gray-600">
+          <p className="text-lg text-gray-600">
             Create custom audiences by grouping personas together.
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="text-sm text-red-600 hover:text-red-800 mt-2"
-            >
-              Dismiss
-            </button>
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-2xl shadow-sm">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-red-700 font-medium">{error}</p>
+                <button
+                  onClick={() => setError(null)}
+                  className="text-sm text-red-600 hover:text-red-800 mt-2 font-semibold"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -201,8 +210,14 @@ export default function AgorasPage() {
               onClick={() => setIsCreating(true)}
               variant="primary"
               size="lg"
+              className="rounded-full shadow-md hover:shadow-lg"
             >
-              + Create New Agora
+              <span className="flex items-center space-x-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Create New Agora</span>
+              </span>
             </Button>
           </div>
         )}
@@ -242,7 +257,7 @@ export default function AgorasPage() {
                       setFormData({ ...formData, name: e.target.value })
                     }
                     placeholder="e.g., Early Adopters, Skeptical Enterprise Buyers"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1d9bf0] focus:border-transparent transition-all"
                     required
                   />
                 </div>
@@ -250,20 +265,20 @@ export default function AgorasPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Select Personas ({formData.personaIds.length} selected)
                   </label>
-                  <div className="space-y-2 max-h-64 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                  <div className="space-y-2 max-h-64 overflow-y-auto border-2 border-gray-200 rounded-xl p-3">
                     {personas.map((persona) => (
                       <label
                         key={persona.id}
-                        className="flex items-start gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                        className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
                       >
                         <input
                           type="checkbox"
                           checked={formData.personaIds.includes(persona.id)}
                           onChange={() => togglePersona(persona.id)}
-                          className="mt-1"
+                          className="mt-1 w-4 h-4 text-[#1d9bf0] border-gray-300 rounded focus:ring-[#1d9bf0]"
                         />
                         <div>
-                          <div className="font-medium text-gray-900">
+                          <div className="font-semibold text-gray-900">
                             {persona.name}
                           </div>
                           <div className="text-sm text-gray-600">

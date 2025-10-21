@@ -18,11 +18,11 @@ export function Button({
 
   const variants = {
     primary:
-      "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
+      "bg-[#1d9bf0] text-white hover:bg-[#1a8cd8] focus:ring-[#1d9bf0]",
     secondary:
       "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500",
     outline:
-      "border-2 border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500",
+      "border-2 border-[#1d9bf0] text-[#1d9bf0] hover:bg-blue-50 focus:ring-[#1d9bf0]",
   };
 
   const sizes = {

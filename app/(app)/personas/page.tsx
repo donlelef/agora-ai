@@ -123,24 +123,33 @@ export default function PersonasPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">
             Manage Personas
           </h1>
-          <p className="text-gray-600">
+          <p className="text-lg text-gray-600">
             Create AI personas with unique characteristics to build your custom
             audiences.
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="text-sm text-red-600 hover:text-red-800 mt-2"
-            >
-              Dismiss
-            </button>
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-2xl shadow-sm">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-red-700 font-medium">{error}</p>
+                <button
+                  onClick={() => setError(null)}
+                  className="text-sm text-red-600 hover:text-red-800 mt-2 font-semibold"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -151,8 +160,14 @@ export default function PersonasPage() {
               onClick={() => setIsCreating(true)}
               variant="primary"
               size="lg"
+              className="rounded-full shadow-md hover:shadow-lg"
             >
-              + Create New Persona
+              <span className="flex items-center space-x-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Create New Persona</span>
+              </span>
             </Button>
           </div>
         )}
@@ -192,7 +207,7 @@ export default function PersonasPage() {
                       setFormData({ ...formData, name: e.target.value })
                     }
                     placeholder="e.g., Tech Enthusiast, Skeptical Professional"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1d9bf0] focus:border-transparent transition-all"
                     required
                   />
                 </div>
@@ -210,7 +225,7 @@ export default function PersonasPage() {
                       setFormData({ ...formData, description: e.target.value })
                     }
                     placeholder="Describe the persona's characteristics, interests, biases, and how they typically respond to content..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1d9bf0] focus:border-transparent resize-none transition-all"
                     rows={4}
                     required
                   />
