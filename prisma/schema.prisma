@@ -54,3 +54,37 @@ model AgoraPersona {
   @@index([personaId])
 }
 
+// Shared post for approval workflow
+model SharedPost {
+  id              String   @id @default(cuid())
+  userId          String   // Clerk user ID of the creator
+  postText        String   @db.Text
+  nps             Int
+  simulationData  Json     // Full simulation results
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  approvals PostApproval[]
+
+  @@index([userId])
+}
+
+// Approval request for a shared post
+model PostApproval {
+  id           String   @id @default(cuid())
+  sharedPostId String
+  approverId   String   // Clerk user ID of the approver
+  status       String   @default("pending") // pending, approved, rejected
+  feedback     String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sharedPost SharedPost @relation(fields: [sharedPostId], references: [id], onDelete: Cascade)
+
+  @@unique([sharedPostId, approverId])
+  @@index([approverId])
+  @@index([sharedPostId])
+  @@index([status])
+}
+

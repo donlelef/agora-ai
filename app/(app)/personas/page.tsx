@@ -328,7 +328,7 @@ export default function PersonasPage() {
             <Card>
               <CardContent className="py-12 text-center">
                 <p className="text-gray-600 mb-4">
-                  You haven't created any personas yet.
+                  You haven&apos;t created any personas yet.
                 </p>
                 <Button onClick={() => setIsCreating(true)} variant="primary">
                   Create Your First Persona

@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import { TwitterPost } from "./twitter-post";
 import { NPSGauge } from "./nps-gauge";
 import { WordCloud } from "./word-cloud";
+import { SharePostDialog } from "./share-post-dialog";
 import type { SimulationResult } from "@/core/types";
 
 interface SimulationResultsProps {
@@ -15,6 +16,8 @@ interface SimulationResultsProps {
 export function SimulationResults({ results }: SimulationResultsProps) {
   const [showAllReplies, setShowAllReplies] = useState(false);
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(results.bestVariantIndex);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
 
   const selectedVariant = results.variants[selectedVariantIndex];
   const bestVariant = results.variants[results.bestVariantIndex];
@@ -97,8 +100,30 @@ export function SimulationResults({ results }: SimulationResultsProps) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleShareSuccess = () => {
+    setShareSuccess(true);
+    setTimeout(() => setShareSuccess(false), 5000);
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
+      {/* Success message */}
+      {shareSuccess && (
+        <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-green-800">Post shared successfully!</p>
+              <p className="text-sm text-green-700">The approver will receive a notification.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Selected Tweet */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex items-center justify-between">
@@ -119,11 +144,30 @@ export function SimulationResults({ results }: SimulationResultsProps) {
               NPS: {selectedVariant.nps}
             </Badge>
           </div>
+          <Button
+            onClick={() => setIsShareDialogOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Share for Approval
+          </Button>
         </div>
         <div className="p-6">
           <TwitterPost text={selectedVariant.text} verified={true} />
         </div>
       </div>
+
+      {/* Share Dialog */}
+      <SharePostDialog
+        postText={selectedVariant.text}
+        nps={selectedVariant.nps}
+        simulationData={{ results, selectedVariantIndex }}
+        isOpen={isShareDialogOpen}
+        onClose={() => setIsShareDialogOpen(false)}
+        onSuccess={handleShareSuccess}
+      />
 
       {/* NPS and Word Cloud - Smaller, side by side */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">

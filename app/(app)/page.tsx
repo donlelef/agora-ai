@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PostInputForm } from "@/components/post-input-form";
 import { SimulationResults } from "@/components/simulation-results";
+import { AnimatedTweetBackground } from "@/components/animated-tweet-background";
 import type { SimulationResult } from "@/core/types";
 
 export default function Home() {
@@ -93,8 +94,11 @@ export default function Home() {
   };
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="relative py-8 px-4 sm:px-6 lg:px-8">
+      {/* Animated Background - only show when no results */}
+      {!results && <AnimatedTweetBackground />}
+      
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
         {!results && (
           <header className="text-center mb-8">
