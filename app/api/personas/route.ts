@@ -25,10 +25,23 @@ export async function GET() {
 
     const personas = await db.persona.findMany({
       where: { userId },
+      include: {
+        agoras: {
+          include: {
+            agora: true,
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(personas);
+    // Transform the response to include agora data
+    const transformedPersonas = personas.map((persona) => ({
+      ...persona,
+      agoras: persona.agoras.map((ap) => ap.agora),
+    }));
+
+    return NextResponse.json(transformedPersonas);
   } catch (error) {
     console.error("Error fetching personas:", error);
     return NextResponse.json(

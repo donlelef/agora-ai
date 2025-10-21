@@ -5,6 +5,7 @@ import { z } from "zod";
 
 const AgoraCreateSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
+  description: z.string().optional(),
   personaIds: z.array(z.string()).min(1, "At least one persona is required"),
 });
 
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, personaIds } = validation.data;
+    const { name, description, personaIds } = validation.data;
 
     // Verify all personas belong to the user
     const personas = await db.persona.findMany({
@@ -98,6 +99,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         name,
+        description: description || null,
         personas: {
           create: personaIds.map((personaId) => ({
             personaId,

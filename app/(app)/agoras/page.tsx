@@ -15,6 +15,7 @@ interface Persona {
 interface Agora {
   id: string;
   name: string;
+  description?: string;
   personas: Persona[];
   createdAt: string;
 }
@@ -28,6 +29,7 @@ export default function AgorasPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
+    description: "",
     personaIds: [] as string[],
   });
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +81,7 @@ export default function AgorasPage() {
       }
 
       await fetchData();
-      setFormData({ name: "", personaIds: [] });
+      setFormData({ name: "", description: "", personaIds: [] });
       setIsCreating(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -97,7 +99,7 @@ export default function AgorasPage() {
       if (!response.ok) throw new Error("Failed to update agora");
 
       await fetchData();
-      setFormData({ name: "", personaIds: [] });
+      setFormData({ name: "", description: "", personaIds: [] });
       setEditingId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -123,6 +125,7 @@ export default function AgorasPage() {
     setEditingId(agora.id);
     setFormData({
       name: agora.name,
+      description: agora.description || "",
       personaIds: agora.personas.map((p) => p.id),
     });
     setIsCreating(false);
@@ -131,7 +134,7 @@ export default function AgorasPage() {
   const cancelEdit = () => {
     setEditingId(null);
     setIsCreating(false);
-    setFormData({ name: "", personaIds: [] });
+    setFormData({ name: "", description: "", personaIds: [] });
   };
 
   const togglePersona = (personaId: string) => {
@@ -157,13 +160,30 @@ export default function AgorasPage() {
     <div className="py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            Manage Agoras
-          </h1>
-          <p className="text-lg text-gray-600">
-            Create custom audiences by grouping personas together.
-          </p>
+        <div className="mb-8 flex items-start justify-between">
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              Manage Agoras
+            </h1>
+            <p className="text-lg text-gray-600">
+              Create custom audiences by grouping personas together.
+            </p>
+          </div>
+          {!isCreating && !editingId && personas.length > 0 && (
+            <Button
+              onClick={() => setIsCreating(true)}
+              variant="primary"
+              size="lg"
+              className="rounded-full shadow-md hover:shadow-lg ml-6 flex-shrink-0"
+            >
+              <span className="flex items-center space-x-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Create New Agora</span>
+              </span>
+            </Button>
+          )}
         </div>
 
         {error && (
@@ -203,25 +223,6 @@ export default function AgorasPage() {
           </Card>
         )}
 
-        {/* Create New Button */}
-        {!isCreating && !editingId && personas.length > 0 && (
-          <div className="mb-6">
-            <Button
-              onClick={() => setIsCreating(true)}
-              variant="primary"
-              size="lg"
-              className="rounded-full shadow-md hover:shadow-lg"
-            >
-              <span className="flex items-center space-x-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span>Create New Agora</span>
-              </span>
-            </Button>
-          </div>
-        )}
-
         {/* Create/Edit Form */}
         {(isCreating || editingId) && (
           <Card className="mb-6">
@@ -259,6 +260,24 @@ export default function AgorasPage() {
                     placeholder="e.g., Early Adopters, Skeptical Enterprise Buyers"
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1d9bf0] focus:border-transparent transition-all"
                     required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    placeholder="Describe this audience group, its purpose, or characteristics..."
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1d9bf0] focus:border-transparent resize-none transition-all"
+                    rows={3}
                   />
                 </div>
                 <div>
@@ -328,6 +347,9 @@ export default function AgorasPage() {
                       <h3 className="text-lg font-semibold text-gray-900 mb-1">
                         {agora.name}
                       </h3>
+                      {agora.description && (
+                        <p className="text-gray-700 mb-2">{agora.description}</p>
+                      )}
                       <p className="text-sm text-gray-500">
                         {agora.personas.length} persona(s) · Created{" "}
                         {new Date(agora.createdAt).toLocaleDateString()}
@@ -336,23 +358,34 @@ export default function AgorasPage() {
                     <div className="flex gap-2 ml-4">
                       <button
                         onClick={() => startEdit(agora)}
-                        className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit agora"
                       >
-                        Edit
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
                       </button>
                       <button
                         onClick={() => handleDelete(agora.id)}
-                        className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete agora"
                       >
-                        Delete
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
                       </button>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {agora.personas.map((persona) => (
-                      <Badge key={persona.id} variant="info">
+                      <button
+                        key={persona.id}
+                        onClick={() => (window.location.href = "/personas")}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 transition-colors cursor-pointer"
+                        title={`View ${persona.name}`}
+                      >
                         {persona.name}
-                      </Badge>
+                      </button>
                     ))}
                   </div>
                 </CardContent>
