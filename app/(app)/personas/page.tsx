@@ -4,17 +4,26 @@ import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+interface Agora {
+  id: string;
+  name: string;
+}
 
 interface Persona {
   id: string;
   name: string;
   description: string;
   createdAt: string;
+  agoras: Agora[];
 }
 
 export default function PersonasPage() {
   const { isLoaded, isSignedIn } = useUser();
   const [personas, setPersonas] = useState<Persona[]>([]);
+  const [agoras, setAgoras] = useState<Agora[]>([]);
+  const [selectedAgoraIds, setSelectedAgoraIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -24,6 +33,7 @@ export default function PersonasPage() {
   useEffect(() => {
     if (isLoaded && isSignedIn) {
       fetchPersonas();
+      fetchAgoras();
     }
   }, [isLoaded, isSignedIn]);
 
@@ -40,6 +50,40 @@ export default function PersonasPage() {
       setIsLoading(false);
     }
   };
+
+  const fetchAgoras = async () => {
+    try {
+      const response = await fetch("/api/agoras");
+      if (!response.ok) throw new Error("Failed to fetch agoras");
+      const data = await response.json();
+      setAgoras(data);
+    } catch (err) {
+      console.error("Failed to fetch agoras:", err);
+    }
+  };
+
+  const toggleAgoraFilter = (agoraId: string) => {
+    setSelectedAgoraIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(agoraId)) {
+        newSet.delete(agoraId);
+      } else {
+        newSet.add(agoraId);
+      }
+      return newSet;
+    });
+  };
+
+  const clearFilters = () => {
+    setSelectedAgoraIds(new Set());
+  };
+
+  const filteredPersonas =
+    selectedAgoraIds.size === 0
+      ? personas
+      : personas.filter((persona) =>
+          persona.agoras.some((agora) => selectedAgoraIds.has(agora.id))
+        );
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,14 +166,31 @@ export default function PersonasPage() {
     <div className="py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            Manage Personas
-          </h1>
-          <p className="text-lg text-gray-600">
-            Create AI personas with unique characteristics to build your custom
-            audiences.
-          </p>
+        <div className="mb-8 flex items-start justify-between">
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              Manage Personas
+            </h1>
+            <p className="text-lg text-gray-600">
+              Create AI personas with unique characteristics to build your custom
+              audiences.
+            </p>
+          </div>
+          {!isCreating && !editingId && (
+            <Button
+              onClick={() => setIsCreating(true)}
+              variant="primary"
+              size="lg"
+              className="rounded-full shadow-md hover:shadow-lg ml-6 flex-shrink-0"
+            >
+              <span className="flex items-center space-x-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span>Create New Persona</span>
+              </span>
+            </Button>
+          )}
         </div>
 
         {error && (
@@ -153,22 +214,40 @@ export default function PersonasPage() {
           </div>
         )}
 
-        {/* Create New Button */}
-        {!isCreating && !editingId && (
-          <div className="mb-6">
-            <Button
-              onClick={() => setIsCreating(true)}
-              variant="primary"
-              size="lg"
-              className="rounded-full shadow-md hover:shadow-lg"
-            >
-              <span className="flex items-center space-x-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span>Create New Persona</span>
-              </span>
-            </Button>
+        {/* Agora Filters */}
+        {agoras.length > 0 && (
+          <div className="mb-6 bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Filter by Agora
+              </h2>
+              {selectedAgoraIds.size > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {agoras.map((agora) => {
+                const isSelected = selectedAgoraIds.has(agora.id);
+                return (
+                  <button
+                    key={agora.id}
+                    onClick={() => toggleAgoraFilter(agora.id)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      isSelected
+                        ? "bg-blue-500 text-white shadow-md hover:bg-blue-600"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-200"
+                    }`}
+                  >
+                    {agora.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -256,15 +335,37 @@ export default function PersonasPage() {
                 </Button>
               </CardContent>
             </Card>
+          ) : filteredPersonas.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-gray-600 mb-4">
+                  No personas found matching the selected filters.
+                </p>
+                <Button onClick={clearFilters} variant="secondary">
+                  Clear Filters
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
-            personas.map((persona) => (
+            filteredPersonas.map((persona) => (
               <Card key={persona.id}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {persona.name}
-                      </h3>
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {persona.name}
+                        </h3>
+                      </div>
+                      {persona.agoras.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {persona.agoras.map((agora) => (
+                            <Badge key={agora.id} variant="info">
+                              {agora.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                       <p className="text-gray-700">{persona.description}</p>
                       <p className="text-xs text-gray-500 mt-2">
                         Created {new Date(persona.createdAt).toLocaleDateString()}
@@ -273,15 +374,21 @@ export default function PersonasPage() {
                     <div className="flex gap-2 ml-4">
                       <button
                         onClick={() => startEdit(persona)}
-                        className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit persona"
                       >
-                        Edit
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
                       </button>
                       <button
                         onClick={() => handleDelete(persona.id)}
-                        className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete persona"
                       >
-                        Delete
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
                       </button>
                     </div>
                   </div>
