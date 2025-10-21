@@ -12,7 +12,7 @@ export const openai = new OpenAI({
  * Configuration for AI model selection
  */
 export const AI_CONFIG = {
-  model: "gpt-4.1",
+  model: "gpt-4.1-nano",
   temperature: 1,
   max_tokens: 800,
 } as const;
