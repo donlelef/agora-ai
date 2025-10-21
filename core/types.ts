@@ -3,7 +3,7 @@
  */
 
 export interface PersonaReply {
-  personaId: number;
+  personaId: string;
   personaDescription: string;
   reply: string;
   sentiment: "positive" | "neutral" | "negative";
@@ -27,5 +27,25 @@ export interface SimulationResult {
 
 export interface SimulationRequest {
   idea: string;
+  agoraId: string;
+  reactionCount: number;
+}
+
+export interface Persona {
+  id: string;
+  userId: string;
+  name: string;
+  description: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Agora {
+  id: string;
+  userId: string;
+  name: string;
+  personas: Persona[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 

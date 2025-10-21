@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+        
+
+model Persona {
+  id          String   @id @default(cuid())
+  userId      String   // Clerk user ID
+  name        String
+  description String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agoras AgoraPersona[]
+
+  @@index([userId])
+}
+
+model Agora {
+  id        String   @id @default(cuid())
+  userId    String   // Clerk user ID
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  personas AgoraPersona[]
+
+  @@index([userId])
+}
+
+// Junction table for many-to-many relationship
+model AgoraPersona {
+  id        String   @id @default(cuid())
+  agoraId   String
+  personaId String
+  createdAt DateTime @default(now())
+
+  agora   Agora   @relation(fields: [agoraId], references: [id], onDelete: Cascade)
+  persona Persona @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  @@unique([agoraId, personaId])
+  @@index([agoraId])
+  @@index([personaId])
+}
+

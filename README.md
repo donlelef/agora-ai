@@ -2,18 +2,23 @@
 
 **Simulate, Analyze, and Optimize Your Social Media Posts Before You Publish.**
 
-Agora AI is a powerful simulation tool that helps content creators, social media managers, and marketers test their post ideas against a diverse set of AI-powered personas. By generating multiple variants and running them through hundreds of simulated social media feeds, Agora provides actionable insights to maximize engagement and ensure your message lands perfectly.
+Agora AI is a powerful simulation tool that helps content creators, social media managers, and marketers test their post ideas against custom-built audiences. By creating unique AI personas, grouping them into "Agoras," and running targeted simulations, Agora provides actionable insights to maximize engagement and ensure your message lands perfectly with your specific audience.
 
-This project is built with Next.js and leverages modern async primitives to handle high-concurrency workloads efficiently on a Node.js server.
+This project is built with Next.js and includes a secure authentication layer powered by [Clerk](https://clerk.com/) to protect user data and manage sessions.
 
 ## Table of Contents
 
 - [About The Project](#about-the-project)
 - [Core Features](#core-features)
+- [User Interface (UI) Overview](#user-interface-ui-overview)
+  - [1. Persona & Agora Management](#1-persona--agora-management)
+  - [2. Input & Simulation](#2-input--simulation)
+  - [3. Results View](#3-results-view)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
+- [Authentication](#authentication)
 - [Project Structure](#project-structure)
 - [Architectural Overview](#architectural-overview)
   - [Frontend](#frontend)
@@ -24,43 +29,82 @@ This project is built with Next.js and leverages modern async primitives to hand
 
 ## About The Project
 
-In the fast-paced world of social media, the difference between a viral post and a forgotten one can be subtle. Agora AI is inspired by platforms like [societies.io](https://www.societies.io/) but is hyper-focused on the X (formerly Twitter) ecosystem.
+In the fast-paced world of social media, targeting the right audience is everything. Agora AI is inspired by platforms like [societies.io](https://www.societies.io/) but gives users direct control over the simulation environment. Instead of testing against a generic crowd, you build your own.
 
-The core problem it solves is **uncertainty**. Instead of publishing a post and hoping for the best, users can:
-1.  **Input a core idea**: "Announcing our new feature that helps users save time."
-2.  **Agora generates variants**: It creates 10 distinct versions of the post with different tones, hooks, and calls-to-action.
-3.  **Simulate with concurrency**: Each of the 10 variants is shown to 50 unique AI personas, resulting in 500 concurrent simulations managed by the Node.js server.
-4.  **Analyze the results**: The application aggregates the reactions, calculates a Net Promoter Score (NPS) for each variant, and uses AI to extract the most insightful reply highlights.
-5.  **Choose the winner**: The user can confidently select the post variant that is statistically most likely to receive positive engagement.
+The core problem it solves is **audience uncertainty**. Agora lets you:
+1.  **Build Your Audience**: Create detailed AI **Personas** with unique backgrounds, interests, and biases.
+2.  **Define an Agora**: Group your Personas into a target audience, or an **"Agora"**.
+3.  **Input a Post Idea**: Write the core message you want to test.
+4.  **Run a Targeted Simulation**: Select an Agora and the number of reactions you want to generate. The system samples from your chosen personas to simulate a realistic social media feed.
+5.  **Analyze the Results**: The app aggregates reactions, calculates an NPS score, and picks the best-performing post variant for *that specific Agora*.
 
 ## Core Features
 
--   **Post Idea Input**: A simple interface to enter the initial concept for a social media post.
--   **Automatic Variant Generation**: Creates 10 unique post variants based on the user's input.
--   **Diverse Persona Simulation**: Tests each variant against 50 different AI-driven personas to gather a wide range of feedback.
--   **Concurrent Processing**: All 500 simulations (10 variants x 50 personas) are run concurrently for maximum speed.
--   **Performance Ranking**: The app automatically identifies the variant with the most positive reactions.
--   **NPS Scoring**: Each variant is given a Net Promoter Score (-100 to 100) to quantify its reception.
--   **Reply Highlights**: AI-powered summarization provides the most representative positive, neutral, and negative replies for each variant.
+-   **Secure Authentication**: User sign-up, sign-in, and session management handled by Clerk.
+-   **Persona Management**: Create, edit, and delete individual AI personas with specific traits, interests, and biases.
+-   **Agora Builder**: Group personas into custom audiences called "Agoras" to represent different target segments.
+-   **Customizable Simulations**: Before running a simulation, users select an Agora and the number of reactions to generate (up to 50).
+-   **Automatic Variant Generation**: Creates 10 unique post variants from a single idea.
+-   **Concurrent Processing**: All simulations run concurrently for maximum speed.
+-   **Performance Ranking**: Automatically identifies and highlights the best-performing variant for the selected Agora.
+-   **NPS Scoring & Sentiment Analysis**: Quantifies post reception with an NPS score and a visual breakdown of reactions.
+
+## User Interface (UI) Overview
+
+The application is divided into distinct sections for management, simulation, and analysis.
+
+### 1. Persona & Agora Management
+
+A dedicated dashboard allows users to manage their simulation building blocks:
+-   **Personas Page**: Users can view a list of all their created personas. A simple form allows them to add new ones by defining attributes like a name, a short bio, and key characteristics (e.g., "Tech enthusiast, skeptical of AI, values privacy").
+-   **Agoras Page**: Here, users create and manage their audiences. When creating an Agora, they give it a name (e.g., "Early Adopters," "Skeptical Enterprise Buyers") and select from their list of existing personas to include in that group.
+
+### 2. Input & Simulation
+
+The main simulation page features a form with three key inputs:
+1.  **Post Idea**: A text area for the core message.
+2.  **Select Agora**: A dropdown menu to choose which custom audience to simulate against.
+3.  **Number of Reactions**: A slider or input field (1-50) to define how many personas from the Agora will be randomly sampled for the simulation.
+
+After filling out the form, the user clicks "Simulate," and the app enters a loading state.
+
+### 3. Results View
+
+The results page is designed to present complex data in an intuitive format, tailored to the selected Agora.
+
+-   **The Best Performing Post**: The winning post variant for that audience is featured prominently in a highlighted card. This section includes:
+    -   A "Best Result" Badge.
+    -   The full post text.
+    -   A large, easy-to-read NPS Score.
+    -   Curated sample replies categorized as Positive, Neutral, and Negative.
+
+-   **Other Variants**: Below the winner, a list of all other variants provides a comparative overview. Each card shows:
+    -   Truncated post text.
+    -   The variant's NPS score.
+    -   A visual sentiment distribution bar (green for positive, gray for neutral, red for negative).
+
+-   **Interactivity**: The list is fully interactive. Clicking on any variant card updates the main view to display its detailed results, allowing for seamless exploration of all generated posts.
 
 ## Tech Stack
 
 -   **Framework**: [Next.js](https://nextjs.org/) (App Router)
+-   **Authentication**: [Clerk](https://clerk.com/docs/nextjs/getting-started/quickstart)
+-   **Database**: PostgreSQL (via Supabase, Vercel Postgres) or a NoSQL alternative (MongoDB Atlas) to store user-specific personas and agoras.
 -   **Language**: [TypeScript](https://www.typescriptlang.org/)
 -   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
--   **State Management**: React Context / Zustand (for client-side state)
+-   **State Management**: React Context / Zustand.
 -   **AI/LLM**: An external provider like OpenAI, Anthropic, or Google Gemini is required.
--   **Deployment**: Any Node.js hosting provider (e.g., Vercel, Railway, AWS EC2, DigitalOcean).
+-   **Deployment**: Any Node.js hosting provider (e.g., Vercel, Railway).
 
 ## Getting Started
-
-Follow these instructions to get a local copy up and running for development and testing.
 
 ### Prerequisites
 
 -   Node.js (v18.x or later)
 -   pnpm, npm, or yarn
+-   A [Clerk](https://clerk.com/) account.
 -   An API key from an AI provider (e.g., OpenAI).
+-   A database connection string (e.g., from Supabase).
 
 ### Installation
 
@@ -76,80 +120,102 @@ Follow these instructions to get a local copy up and running for development and
     ```
 
 3.  **Set up environment variables:**
-    Create a file named `.env.local` in the root of the project and add your AI provider's API key.
+    Create a file named `.env.local` in the root of the project.
     ```env
     # .env.local
+
+    # Clerk Keys
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_..."
+    CLERK_SECRET_KEY="sk_..."
+
+    # AI Provider Key
     OPENAI_API_KEY="sk-..."
+
+    # Database
+    DATABASE_URL="..."
     ```
 
-4.  **Run the development server:**
+4.  **Push the database schema:**
+    If using Prisma, run:
+    ```sh
+    npx prisma db push
+    ```
+
+5.  **Run the development server:**
     ```sh
     pnpm dev
     ```
-    Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+    Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Authentication
+
+Authentication is handled by Clerk, providing a robust and easy-to-use solution for managing users. A `middleware.ts` file in the root of the project protects all routes by default. Unauthenticated users are redirected to the sign-in page.
+
+```ts
+// middleware.ts
+import { authMiddleware } from "@clerk/nextjs";
+
+export default authMiddleware({
+  publicRoutes: [], // No public routes, all require sign-in
+});
+
+export const config = {
+  matcher: ["/((?!.+.[w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+};
+```
 
 ## Project Structure
 
-The project uses the Next.js App Router for a modern, component-centric structure.
+The structure now includes routes for managing personas and agoras.
 
 ```
 /
 ├── app/
+│   ├── (auth)/             # Auth pages (sign-in, sign-up)
+│   ├── (app)/              # Main protected application routes
+│   │   ├── agoras/         # Agora management UI
+│   │   ├── personas/       # Persona management UI
+│   │   ├── layout.tsx      # Layout for the main app
+│   │   └── page.tsx        # The main simulation page
 │   ├── api/
 │   │   └── simulate/
-│   │       └── route.ts      # Backend logic for handling simulations
-│   ├── layout.tsx            # Root layout
-│   └── page.tsx              # Main page component
+│   │       └── route.ts
+│   └── layout.tsx            # Root layout with ClerkProvider
 │
-├── components/
-│   ├── ui/                   # Reusable UI elements (Buttons, Cards, etc.)
-│   ├── post-input-form.tsx   # Form for user input
-│   └── simulation-results.tsx# Component to display results
-│
-├── lib/
-│   └── ai.ts                 # AI provider SDK configuration and helpers
-│
-├── core/
-│   └── simulation.ts         # Core business logic for running simulations
-│
-└── public/                   # Static assets
+├── prisma/                 # Or other ORM folder
+│   └── schema.prisma
+└── middleware.ts           # Clerk authentication middleware
 ```
 
 ## Architectural Overview
 
 ### Frontend
 
-The frontend is built as a single-page application experience.
--   A user submits a post idea through the `PostInputForm` component.
--   On submission, a `POST` request is sent to the `/api/simulate` endpoint.
--   The UI enters a loading state while the simulations are running.
--   Once the API returns the results, the `SimulationResults` component displays the data, highlighting the winning variant and showing the detailed breakdown for all 10.
+The frontend now includes state management for personas and agoras, fetching them from the database to populate the UI. The core simulation flow remains the same, but the request payload is now more detailed.
 
 ### Backend & Simulation Logic
 
-The simulation process is designed to be highly concurrent, running directly on the application's Node.js server. It leverages modern asynchronous JavaScript primitives to handle hundreds of simulations simultaneously without blocking the main thread.
+The simulation logic is enhanced to incorporate user-defined audiences.
 
-1.  **API Entrypoint**: The `app/api/simulate/route.ts` file receives the initial post idea.
-2.  **Variant Generation**: The API first calls the configured LLM to generate 10 diverse post variants.
-3.  **Fan-Out with Concurrency**: The core of the architecture. The application leverages `async`/`await` and `Promise.all()` to achieve high concurrency. Upon receiving a request, it "fans out" the work by making 500 independent, asynchronous calls to the LLM. Each call includes one post variant and one persona profile. These requests run concurrently within the Node.js event loop, maximizing throughput.
-4.  **Aggregation**: Once all 500 simulation promises resolve, the backend aggregates the results.
-5.  **Analysis**:
-    -   It calculates the NPS for each of the 10 variants based on the sentiment of the 50 replies.
-    -   It uses another LLM call to summarize the replies and extract key highlights.
-6.  **Response**: The final, structured JSON object containing all variants, scores, and highlights is sent back to the client.
-
-This highly concurrent approach ensures that the total simulation time is dictated by the slowest few API responses from the LLM, rather than the sum of all 500 requests executed sequentially.
+1.  **Authentication & Authorization**: The Clerk middleware verifies the user's session on every API call.
+2.  **API Entrypoint**: The `POST /api/simulate` route receives `idea`, `agoraId`, and `reactionCount`.
+3.  **Fetch & Sample**: The backend queries the database for the Agora linked to the `agoraId` and the authenticated `userId`. It then randomly samples the specified `reactionCount` from the list of personas associated with that Agora.
+4.  **Variant Generation & Fan-Out**: The system generates 10 post variants and "fans out" the work, running concurrent simulations using the *sampled* personas.
+5.  **Aggregation & Analysis**: The results are aggregated, NPS scores are calculated, and highlights are generated.
+6.  **Response**: The final, structured JSON object is sent back to the client.
 
 ## API Endpoint
 
 ### `POST /api/simulate`
 
-This endpoint triggers the entire simulation process.
+This endpoint is **protected**.
 
 **Request Body:**
 ```json
 {
-  "idea": "A post about our new AI-powered analytics feature."
+  "idea": "A post about our new AI-powered analytics feature.",
+  "agoraId": "clx...",
+  "reactionCount": 40
 }
 ```
 
@@ -161,13 +227,14 @@ This endpoint triggers the entire simulation process.
     {
       "text": "Variant 1: Discover insights faster than ever with our new AI analytics! 🚀 #AI #Data",
       "nps": 52,
+      "sentiment": { "positive": 30, "neutral": 15, "negative": 5 },
       "highlights": {
         "positive": "Users are excited about the speed and innovation.",
         "neutral": "Some are curious about the pricing.",
         "negative": "A few express concern about data privacy."
       },
       "replies": [
-        /* Full list of 50 simulated replies */
+        /* Full list of simulated replies */
       ]
     },
     // ... 9 other variant objects
@@ -177,13 +244,11 @@ This endpoint triggers the entire simulation process.
 
 ## Roadmap
 
-This is the initial version of Agora AI. Future enhancements include:
-
--   **User Authentication**: Allow users to save their simulation history.
--   **Persona Customization**: Enable users to define or upload their own target audience personas.
--   **Platform Expansion**: Add support for other social media platforms like LinkedIn, Instagram, and Facebook, with platform-specific context.
--   **Advanced Analytics**: Track the performance of variants over time and provide deeper insights.
--   **Team Collaboration**: Allow multiple users within an organization to share and review simulations.
+-   **Share Agoras**: Allow users to share their custom-built Agoras with team members.
+-   **Community Personas**: Create a public library where users can share and use personas created by the community.
+-   **Save Simulation History**: Store user simulation results in the database, linked to their `userId`.
+-   **API Rate Limiting**: Prevent abuse by limiting the number of simulations a user can run.
+-   **Platform Expansion**: Add support for other social media platforms like LinkedIn and Instagram.
 
 ## License
 

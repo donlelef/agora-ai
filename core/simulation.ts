@@ -1,9 +1,9 @@
 import { openai, AI_CONFIG } from "@/lib/ai";
-import { getSimulationPersonas } from "./personas";
 import type {
   PersonaReply,
   VariantResult,
   SimulationResult,
+  Persona,
 } from "./types";
 
 /**
@@ -50,9 +50,10 @@ Return exactly 10 variants, numbered 1-10, each on a new line.`;
  */
 async function simulatePersonaReaction(
   variant: string,
-  personaDescription: string,
-  personaId: number
+  persona: Persona
 ): Promise<PersonaReply> {
+  const personaDescription = `${persona.name}: ${persona.description}`;
+  const personaId = persona.id;
   const prompt = `You are simulating a social media user with this profile:
 "${personaDescription}"
 
@@ -168,15 +169,15 @@ NEGATIVE: [summary]`;
 }
 
 /**
- * Simulate reactions for a single variant across all personas
+ * Simulate reactions for a single variant across selected personas
  */
 async function simulateVariant(
   variant: string,
-  personas: string[]
+  personas: Persona[]
 ): Promise<VariantResult> {
   // Fan out: Run all persona simulations concurrently
-  const replyPromises = personas.map((persona, index) =>
-    simulatePersonaReaction(variant, persona, index)
+  const replyPromises = personas.map((persona) =>
+    simulatePersonaReaction(variant, persona)
   );
 
   const replies = await Promise.all(replyPromises);
@@ -192,19 +193,41 @@ async function simulateVariant(
 }
 
 /**
- * Main simulation orchestration
- * Generates variants and simulates reactions across all personas concurrently
+ * Randomly sample personas from an array
  */
-export async function runSimulation(idea: string): Promise<SimulationResult> {
+function samplePersonas(personas: Persona[], count: number): Persona[] {
+  if (count >= personas.length) {
+    return personas;
+  }
+
+  // Fisher-Yates shuffle and take first 'count' elements
+  const shuffled = [...personas];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled.slice(0, count);
+}
+
+/**
+ * Main simulation orchestration
+ * Generates variants and simulates reactions across selected personas concurrently
+ */
+export async function runSimulation(
+  idea: string,
+  personas: Persona[],
+  reactionCount: number
+): Promise<SimulationResult> {
   // Step 1: Generate 10 variants
   const variants = await generateVariants(idea);
 
-  // Step 2: Get personas for simulation
-  const personas = getSimulationPersonas(50);
+  // Step 2: Sample the requested number of personas
+  const sampledPersonas = samplePersonas(personas, reactionCount);
 
-  // Step 3: Run all variant simulations concurrently (500 total API calls)
+  // Step 3: Run all variant simulations concurrently
   const variantResults = await Promise.all(
-    variants.map((variant) => simulateVariant(variant, personas))
+    variants.map((variant) => simulateVariant(variant, sampledPersonas))
   );
 
   // Step 4: Identify the best variant by NPS

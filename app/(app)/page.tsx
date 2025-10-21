@@ -10,7 +10,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (idea: string) => {
+  const handleSubmit = async (idea: string, agoraId: string, reactionCount: number) => {
     setIsLoading(true);
     setError(null);
     setResults(null);
@@ -21,7 +21,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ idea }),
+        body: JSON.stringify({ idea, agoraId, reactionCount }),
       });
 
       const data = await response.json();
@@ -46,19 +46,12 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div className="py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Agora AI
-          </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Simulate, analyze, and optimize your social media posts before you
-            publish.
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Test your ideas against 50 diverse AI personas and get actionable
+            Test your post ideas against custom AI audiences and get actionable
             insights.
           </p>
         </header>
@@ -100,21 +93,6 @@ export default function Home() {
             </div>
           )}
         </main>
-
-        {/* Footer */}
-        <footer className="mt-16 text-center text-sm text-gray-500">
-          <p>
-            Built with Next.js, TypeScript, and AI. Inspired by{" "}
-            <a
-              href="https://www.societies.io/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              societies.io
-            </a>
-          </p>
-        </footer>
       </div>
     </div>
   );

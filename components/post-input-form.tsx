@@ -1,17 +1,58 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 
+interface Agora {
+  id: string;
+  name: string;
+  personas: { id: string; name: string }[];
+}
+
 interface PostInputFormProps {
-  onSubmit: (idea: string) => void;
+  onSubmit: (idea: string, agoraId: string, reactionCount: number) => void;
   isLoading: boolean;
 }
 
 export function PostInputForm({ onSubmit, isLoading }: PostInputFormProps) {
+  const { isLoaded, isSignedIn } = useUser();
   const [idea, setIdea] = useState("");
+  const [agoraId, setAgoraId] = useState("");
+  const [reactionCount, setReactionCount] = useState(25);
+  const [agoras, setAgoras] = useState<Agora[]>([]);
+  const [isLoadingAgoras, setIsLoadingAgoras] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      fetchAgoras();
+    }
+  }, [isLoaded, isSignedIn]);
+
+  const fetchAgoras = async () => {
+    try {
+      setIsLoadingAgoras(true);
+      const response = await fetch("/api/agoras");
+      if (response.ok) {
+        const data = await response.json();
+        setAgoras(data);
+        if (data.length > 0) {
+          setAgoraId(data[0].id);
+        }
+      } else {
+        console.error("Failed to fetch agoras:", response.status, response.statusText);
+      }
+    } catch (err) {
+      console.error("Failed to fetch agoras:", err);
+    } finally {
+      setIsLoadingAgoras(false);
+    }
+  };
+
+  const selectedAgora = agoras.find((a) => a.id === agoraId);
+  const maxReactions = selectedAgora ? selectedAgora.personas.length : 50;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,19 +68,64 @@ export function PostInputForm({ onSubmit, isLoading }: PostInputFormProps) {
       return;
     }
 
-    onSubmit(idea.trim());
+    if (!agoraId) {
+      setError("Please select an agora");
+      return;
+    }
+
+    onSubmit(idea.trim(), agoraId, reactionCount);
   };
+
+  if (isLoadingAgoras) {
+    return (
+      <Card className="w-full max-w-3xl mx-auto">
+        <CardContent className="py-12 text-center">
+          <p className="text-gray-600">Loading your agoras...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (agoras.length === 0) {
+    return (
+      <Card className="w-full max-w-3xl mx-auto">
+        <CardContent className="py-12 text-center">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No Agoras Found
+          </h3>
+          <p className="text-gray-600 mb-6">
+            You need to create an agora (audience) before running simulations.
+          </p>
+          <div className="space-y-2">
+            <Button
+              onClick={() => (window.location.href = "/personas")}
+              variant="primary"
+            >
+              1. Create Personas
+            </Button>
+            <br />
+            <Button
+              onClick={() => (window.location.href = "/agoras")}
+              variant="secondary"
+            >
+              2. Create an Agora
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
               htmlFor="post-idea"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              What&apos;s your post idea?
+              Post Idea
             </label>
             <textarea
               id="post-idea"
@@ -66,11 +152,64 @@ export function PostInputForm({ onSubmit, isLoading }: PostInputFormProps) {
             </div>
           </div>
 
+          <div>
+            <label
+              htmlFor="agora"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Select Agora (Target Audience)
+            </label>
+            <select
+              id="agora"
+              value={agoraId}
+              onChange={(e) => {
+                setAgoraId(e.target.value);
+                const selected = agoras.find((a) => a.id === e.target.value);
+                if (selected) {
+                  setReactionCount(
+                    Math.min(reactionCount, selected.personas.length)
+                  );
+                }
+              }}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={isLoading}
+            >
+              {agoras.map((agora) => (
+                <option key={agora.id} value={agora.id}>
+                  {agora.name} ({agora.personas.length} personas)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="reactions"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Number of Reactions: {reactionCount}
+            </label>
+            <input
+              id="reactions"
+              type="range"
+              min="1"
+              max={Math.min(maxReactions, 50)}
+              value={reactionCount}
+              onChange={(e) => setReactionCount(Number(e.target.value))}
+              className="w-full"
+              disabled={isLoading}
+            />
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>1</span>
+              <span>{Math.min(maxReactions, 50)} (max)</span>
+            </div>
+          </div>
+
           <Button
             type="submit"
             variant="primary"
             size="lg"
-            disabled={isLoading || idea.trim().length < 10}
+            disabled={isLoading || idea.trim().length < 10 || !agoraId}
             className="w-full"
           >
             {isLoading ? (
@@ -105,8 +244,8 @@ export function PostInputForm({ onSubmit, isLoading }: PostInputFormProps) {
           {isLoading && (
             <div className="text-center text-sm text-gray-600">
               <p>
-                Generating 10 variants and simulating 50 persona reactions for
-                each...
+                Generating 10 variants and simulating {reactionCount} persona
+                reactions for each...
               </p>
               <p className="mt-1 text-xs text-gray-500">
                 This may take 1-2 minutes
