@@ -14,9 +14,10 @@ interface Agora {
 interface PostInputFormProps {
   onSubmit: (idea: string, agoraId: string, reactionCount: number) => void;
   isLoading: boolean;
+  progress?: { completed: number; total: number } | null;
 }
 
-export function PostInputForm({ onSubmit, isLoading }: PostInputFormProps) {
+export function PostInputForm({ onSubmit, isLoading, progress }: PostInputFormProps) {
   const { isLoaded, isSignedIn } = useUser();
   const [idea, setIdea] = useState("");
   const [agoraId, setAgoraId] = useState("");
@@ -52,7 +53,8 @@ export function PostInputForm({ onSubmit, isLoading }: PostInputFormProps) {
   };
 
   const selectedAgora = agoras.find((a) => a.id === agoraId);
-  const maxReactions = selectedAgora ? selectedAgora.personas.length : 50;
+  // Always allow up to 50 reactions
+  const maxReactions = 50;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,12 +246,6 @@ export function PostInputForm({ onSubmit, isLoading }: PostInputFormProps) {
                   value={agoraId}
                   onChange={(e) => {
                     setAgoraId(e.target.value);
-                    const selected = agoras.find((a) => a.id === e.target.value);
-                    if (selected) {
-                      setReactionCount(
-                        Math.min(reactionCount, selected.personas.length)
-                      );
-                    }
                   }}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1d9bf0] focus:border-transparent transition-all font-medium text-gray-700"
                   disabled={isLoading}
@@ -280,7 +276,7 @@ export function PostInputForm({ onSubmit, isLoading }: PostInputFormProps) {
                   id="reactions"
                   type="range"
                   min="1"
-                  max={Math.min(maxReactions, 50)}
+                  max={maxReactions}
                   value={reactionCount}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#1d9bf0]"
                   disabled={isLoading}
@@ -288,7 +284,7 @@ export function PostInputForm({ onSubmit, isLoading }: PostInputFormProps) {
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-2 px-1">
                   <span className="font-medium">1</span>
-                  <span className="font-medium">{Math.min(maxReactions, 50)}</span>
+                  <span className="font-medium">{maxReactions}</span>
                 </div>
               </div>
             </div>
@@ -324,9 +320,33 @@ export function PostInputForm({ onSubmit, isLoading }: PostInputFormProps) {
                 <p className="text-base font-semibold text-gray-700 mb-1">
                   Generating 10 variants and simulating {reactionCount} persona reactions for each...
                 </p>
-                <p className="text-sm text-gray-600">
-                  This may take 1-2 minutes. Grab a coffee! ☕
-                </p>
+                
+                {/* Progress Bar */}
+                {progress && (
+                  <div className="mt-4 mb-2">
+                    <div className="w-full bg-white rounded-full h-4 shadow-inner">
+                      <div
+                        className="bg-gradient-to-r from-[#1d9bf0] to-[#1a8cd8] h-4 rounded-full transition-all duration-300 ease-out flex items-center justify-center"
+                        style={{ width: `${(progress.completed / progress.total) * 100}%` }}
+                      >
+                        {progress.completed > 0 && (
+                          <span className="text-xs font-bold text-white">
+                            {Math.round((progress.completed / progress.total) * 100)}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-2">
+                      {progress.completed} of {progress.total} reactions collected
+                    </p>
+                  </div>
+                )}
+                
+                {!progress && (
+                  <p className="text-sm text-gray-600">
+                    This may take 1-2 minutes. Grab a coffee! ☕
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

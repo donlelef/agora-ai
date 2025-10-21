@@ -173,12 +173,24 @@ NEGATIVE: [summary]`;
  */
 async function simulateVariant(
   variant: string,
-  personas: Persona[]
+  personas: Persona[],
+  onProgress?: (completed: number, total: number) => void
 ): Promise<VariantResult> {
-  // Fan out: Run all persona simulations concurrently
-  const replyPromises = personas.map((persona) =>
-    simulatePersonaReaction(variant, persona)
-  );
+  const total = personas.length;
+  let completed = 0;
+
+  // Run all persona simulations in parallel, but track progress as they complete
+  const replyPromises = personas.map(async (persona) => {
+    const reply = await simulatePersonaReaction(variant, persona);
+    
+    // Report progress after each completion
+    if (onProgress) {
+      completed++;
+      onProgress(completed, total);
+    }
+    
+    return reply;
+  });
 
   const replies = await Promise.all(replyPromises);
   const nps = calculateNPS(replies);
@@ -193,44 +205,62 @@ async function simulateVariant(
 }
 
 /**
- * Randomly sample personas from an array
+ * Randomly sample personas from an array (with replacement if needed)
  */
 function samplePersonas(personas: Persona[], count: number): Persona[] {
-  if (count >= personas.length) {
-    return personas;
+  if (count <= personas.length) {
+    // Fisher-Yates shuffle and take first 'count' elements
+    const shuffled = [...personas];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, count);
   }
 
-  // Fisher-Yates shuffle and take first 'count' elements
-  const shuffled = [...personas];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  // Need to sample with replacement
+  const sampled: Persona[] = [];
+  for (let i = 0; i < count; i++) {
+    const randomIndex = Math.floor(Math.random() * personas.length);
+    sampled.push(personas[randomIndex]);
   }
-
-  return shuffled.slice(0, count);
+  return sampled;
 }
 
 /**
  * Main simulation orchestration
- * Generates variants and simulates reactions across selected personas concurrently
+ * Generates variants and simulates reactions across selected personas with progress tracking
  */
 export async function runSimulation(
   idea: string,
   personas: Persona[],
-  reactionCount: number
+  reactionCount: number,
+  onProgress?: (completed: number, total: number) => void
 ): Promise<SimulationResult> {
   // Step 1: Generate 10 variants
   const variants = await generateVariants(idea);
 
-  // Step 2: Sample the requested number of personas
-  const sampledPersonas = samplePersonas(personas, reactionCount);
+  // Step 2: Sample the requested number of personas (up to 50)
+  const sampledPersonas = samplePersonas(personas, Math.min(reactionCount, 50));
 
-  // Step 3: Run all variant simulations concurrently
-  const variantResults = await Promise.all(
-    variants.map((variant) => simulateVariant(variant, sampledPersonas))
-  );
+  // Step 3: Calculate total reactions needed
+  const totalReactions = variants.length * sampledPersonas.length;
+  let completedReactions = 0;
 
-  // Step 4: Identify the best variant by NPS
+  // Step 4: Run all variant simulations in parallel with progress tracking
+  const variantResultPromises = variants.map((variant) => {
+    return simulateVariant(variant, sampledPersonas, () => {
+      // Increment the shared counter atomically
+      completedReactions++;
+      if (onProgress) {
+        onProgress(completedReactions, totalReactions);
+      }
+    });
+  });
+
+  const variantResults = await Promise.all(variantResultPromises);
+
+  // Step 5: Identify the best variant by NPS
   let bestVariantIndex = 0;
   let bestNPS = variantResults[0].nps;
 

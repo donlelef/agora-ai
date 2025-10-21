@@ -18,6 +18,7 @@ const SimulationRequestSchema = z.object({
     .int()
     .min(1, "At least 1 reaction is required")
     .max(50, "Maximum 50 reactions allowed"),
+  stream: z.boolean().optional(),
 });
 
 /**
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { idea, agoraId, reactionCount } = validation.data;
+    const { idea, agoraId, reactionCount, stream } = validation.data;
 
     // Fetch the agora with its personas
     const agora = await db.agora.findFirst({
@@ -90,16 +91,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (reactionCount > personas.length) {
-      return NextResponse.json(
-        {
-          error: `Cannot simulate ${reactionCount} reactions with only ${personas.length} personas in this agora.`,
+    // If streaming is requested, return a streaming response
+    if (stream) {
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            // Run the simulation with progress callback
+            const result = await runSimulation(idea, personas, reactionCount, (completed, total) => {
+              const progressData = JSON.stringify({ 
+                type: 'progress', 
+                completed, 
+                total 
+              });
+              controller.enqueue(encoder.encode(`data: ${progressData}\n\n`));
+            });
+
+            // Send the final result
+            const resultData = JSON.stringify({ 
+              type: 'result', 
+              data: result 
+            });
+            controller.enqueue(encoder.encode(`data: ${resultData}\n\n`));
+            controller.close();
+          } catch (error) {
+            const errorData = JSON.stringify({ 
+              type: 'error', 
+              message: error instanceof Error ? error.message : 'Simulation failed' 
+            });
+            controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
+            controller.close();
+          }
         },
-        { status: 400 }
-      );
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
     }
 
-    // Run the simulation
+    // Run the simulation without streaming (backwards compatibility)
     const result = await runSimulation(idea, personas, reactionCount);
 
     return NextResponse.json(result, { status: 200 });
@@ -134,12 +169,17 @@ export async function GET() {
   return NextResponse.json(
     {
       message: "Agora AI Simulation API",
-      version: "2.0.0",
+      version: "2.1.0",
       endpoint: "POST /api/simulate",
       expectedBody: {
         idea: "string (10-500 characters)",
         agoraId: "string (Agora ID)",
         reactionCount: "number (1-50)",
+        stream: "boolean (optional, enables Server-Sent Events for progress updates)",
+      },
+      features: {
+        sampling: "Automatically samples with replacement if reaction count exceeds available personas",
+        streaming: "Set stream=true to receive real-time progress updates via Server-Sent Events",
       },
     },
     { status: 200 }

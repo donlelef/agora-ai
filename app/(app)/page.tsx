@@ -9,11 +9,13 @@ export default function Home() {
   const [results, setResults] = useState<SimulationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null);
 
   const handleSubmit = async (idea: string, agoraId: string, reactionCount: number) => {
     setIsLoading(true);
     setError(null);
     setResults(null);
+    setProgress(null);
 
     try {
       const response = await fetch("/api/simulate", {
@@ -21,22 +23,67 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ idea, agoraId, reactionCount }),
+        body: JSON.stringify({ idea, agoraId, reactionCount, stream: true }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
+        const data = await response.json();
         throw new Error(data.message || "Simulation failed");
       }
 
-      setResults(data);
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Append the new chunk to the buffer
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Split by double newline (SSE message separator)
+        const messages = buffer.split("\n\n");
+        
+        // Keep the last incomplete message in the buffer
+        buffer = messages.pop() || "";
+
+        // Process complete messages
+        for (const message of messages) {
+          const lines = message.split("\n");
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(line.substring(6));
+
+                if (data.type === "progress") {
+                  console.log("Progress update:", data.completed, "/", data.total);
+                  setProgress({ completed: data.completed, total: data.total });
+                } else if (data.type === "result") {
+                  console.log("Simulation complete!");
+                  setResults(data.data);
+                } else if (data.type === "error") {
+                  throw new Error(data.message);
+                }
+              } catch (e) {
+                console.error("Failed to parse SSE message:", line, e);
+              }
+            }
+          }
+        }
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred"
       );
     } finally {
       setIsLoading(false);
+      setProgress(null);
     }
   };
 
@@ -63,7 +110,11 @@ export default function Home() {
         {/* Main Content */}
         <main>
           {!results && !error && (
-            <PostInputForm onSubmit={handleSubmit} isLoading={isLoading} />
+            <PostInputForm 
+              onSubmit={handleSubmit} 
+              isLoading={isLoading}
+              progress={progress}
+            />
           )}
 
           {error && (
