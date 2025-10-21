@@ -72,14 +72,6 @@ export function TwitterReply({
   const handle = getHandle(personaDescription);
   const initial = displayName.charAt(0).toUpperCase();
   const avatarColor = getAvatarColor(personaDescription);
-  
-  // Remove the name prefix from the description if it exists
-  const getDescriptionWithoutName = (description: string, name: string) => {
-    const pattern = new RegExp(`^${name}:\\s*`, 'i');
-    return description.replace(pattern, '').trim();
-  };
-  
-  const cleanDescription = getDescriptionWithoutName(personaDescription, displayName);
 
   return (
     <div className={`bg-white border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors ${className}`}>
@@ -96,18 +88,13 @@ export function TwitterReply({
         {/* Content */}
         <div className="flex-1 min-w-0">
           {/* User Info */}
-          <div className="flex items-center flex-wrap gap-x-1 mb-0.5">
+          <div className="flex items-center flex-wrap gap-x-1 mb-1">
             <span className="font-bold text-[15px] text-gray-900 hover:underline cursor-pointer">
               {displayName}
             </span>
             <span className="text-[15px] text-gray-500">@{handle}</span>
             <span className="text-gray-500">·</span>
             <span className="text-[15px] text-gray-500">{timestamp}</span>
-          </div>
-
-          {/* Bio/Description */}
-          <div className="text-[13px] text-gray-500 mb-1 line-clamp-1">
-            {cleanDescription}
           </div>
 
           {/* Reply Text */}
