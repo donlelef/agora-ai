@@ -14,11 +14,14 @@ interface SimulationResultsProps {
 
 export function SimulationResults({ results }: SimulationResultsProps) {
   const [showAllReplies, setShowAllReplies] = useState(false);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(results.bestVariantIndex);
 
+  const selectedVariant = results.variants[selectedVariantIndex];
   const bestVariant = results.variants[results.bestVariantIndex];
   const otherVariants = results.variants
-    .filter((_, idx) => idx !== results.bestVariantIndex)
-    .sort((a, b) => b.nps - a.nps); // Sort by NPS descending
+    .map((variant, idx) => ({ variant, index: idx }))
+    .filter(({ index }) => index !== selectedVariantIndex)
+    .sort((a, b) => b.variant.nps - a.variant.nps); // Sort by NPS descending
 
   const getNPSColor = (nps: number) => {
     if (nps >= 50) return "success";
@@ -81,14 +84,44 @@ export function SimulationResults({ results }: SimulationResultsProps) {
     return words[0] || "User";
   };
 
-  const visibleReplies = showAllReplies ? bestVariant.replies : bestVariant.replies.slice(0, 6);
+  const visibleReplies = showAllReplies ? selectedVariant.replies : selectedVariant.replies.slice(0, 6);
+
+  // Reset showAllReplies when variant changes
+  React.useEffect(() => {
+    setShowAllReplies(false);
+  }, [selectedVariantIndex]);
+
+  const handleVariantClick = (index: number) => {
+    setSelectedVariantIndex(index);
+    // Scroll to top to show the selected variant
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
-      {/* Winning Tweet */}
+      {/* Selected Tweet */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="border-b border-gray-200 px-6 py-4 bg-gray-50 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-bold text-gray-900">
+              {selectedVariantIndex === results.bestVariantIndex ? (
+                <>
+                  <span className="text-green-600">🏆</span> Winning Tweet
+                </>
+              ) : (
+                <>Variant #{selectedVariantIndex + 1}</>
+              )}
+            </h3>
+            <Badge
+              variant={getNPSColor(selectedVariant.nps)}
+              className="text-sm px-3 py-1"
+            >
+              NPS: {selectedVariant.nps}
+            </Badge>
+          </div>
+        </div>
         <div className="p-6">
-          <TwitterPost text={bestVariant.text} verified={true} />
+          <TwitterPost text={selectedVariant.text} verified={true} />
         </div>
       </div>
 
@@ -97,12 +130,12 @@ export function SimulationResults({ results }: SimulationResultsProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
           <div className="p-4">
             <div className="scale-75 origin-top">
-              <NPSGauge score={bestVariant.nps} />
+              <NPSGauge score={selectedVariant.nps} />
             </div>
           </div>
           <div className="p-4">
             <div className="scale-75 origin-top">
-              <WordCloud replies={bestVariant.replies} />
+              <WordCloud replies={selectedVariant.replies} />
             </div>
           </div>
         </div>
@@ -112,7 +145,7 @@ export function SimulationResults({ results }: SimulationResultsProps) {
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="border-b border-gray-200 px-6 py-4 bg-gray-50">
           <h3 className="text-lg font-bold text-gray-900">
-            Reactions ({bestVariant.replies.length})
+            Reactions ({selectedVariant.replies.length})
           </h3>
         </div>
         
@@ -155,14 +188,14 @@ export function SimulationResults({ results }: SimulationResultsProps) {
             })}
           </div>
           
-          {!showAllReplies && bestVariant.replies.length > 6 && (
+          {!showAllReplies && selectedVariant.replies.length > 6 && (
             <div className="mt-6 text-center">
               <Button
                 onClick={() => setShowAllReplies(true)}
                 variant="outline"
                 className="w-full sm:w-auto"
               >
-                View all {bestVariant.replies.length} reactions
+                View all {selectedVariant.replies.length} reactions
               </Button>
             </div>
           )}
@@ -188,17 +221,29 @@ export function SimulationResults({ results }: SimulationResultsProps) {
             <h3 className="text-lg font-bold text-gray-900">
               Other Variants
             </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Click on a variant to view its details
+            </p>
           </div>
           
           <div className="p-6 space-y-6">
-            {otherVariants.map((variant, idx) => {
-              const actualIndex = results.variants.findIndex(v => v === variant);
+            {otherVariants.map(({ variant, index }) => {
+              const isWinner = index === results.bestVariantIndex;
               return (
-                <div key={idx} className="border border-gray-200 rounded-xl p-6 bg-gray-50">
+                <div 
+                  key={index} 
+                  onClick={() => handleVariantClick(index)}
+                  className="border border-gray-200 rounded-xl p-6 bg-gray-50 cursor-pointer hover:border-blue-400 hover:shadow-lg transition-all duration-200 hover:bg-blue-50/50"
+                >
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-bold text-gray-900">
-                      Variant #{actualIndex + 1}
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-lg font-bold text-gray-900">
+                        Variant #{index + 1}
+                      </h4>
+                      {isWinner && (
+                        <span className="text-green-600" title="Winning variant">🏆</span>
+                      )}
+                    </div>
                     <Badge
                       variant={getNPSColor(variant.nps)}
                       className="text-sm px-3 py-1"
@@ -207,7 +252,7 @@ export function SimulationResults({ results }: SimulationResultsProps) {
                     </Badge>
                   </div>
                   
-                  <div className="bg-white rounded-xl p-4 mb-4">
+                  <div className="bg-white rounded-xl p-4 mb-4 pointer-events-none">
                     <TwitterPost text={variant.text} verified={true} />
                   </div>
                   
