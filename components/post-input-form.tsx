@@ -40,7 +40,11 @@ export function PostInputForm({ onSubmit, isLoading, progress }: PostInputFormPr
         const data = await response.json();
         setAgoras(data);
         if (data.length > 0) {
-          setAgoraId(data[0].id);
+          // Try to find California Electorate agora as default
+          const californiaAgora = data.find((agora: Agora) => 
+            agora.name.toLowerCase().includes("california electorate")
+          );
+          setAgoraId(californiaAgora?.id || data[0].id);
         }
       } else {
         console.error("Failed to fetch agoras:", response.status, response.statusText);
@@ -65,8 +69,8 @@ export function PostInputForm({ onSubmit, isLoading, progress }: PostInputFormPr
       return;
     }
 
-    if (idea.trim().length > 500) {
-      setError("Please keep your idea under 500 characters");
+    if (idea.trim().length > 280) {
+      setError("Please keep your idea under 280 characters");
       return;
     }
 
@@ -161,19 +165,19 @@ export function PostInputForm({ onSubmit, isLoading, progress }: PostInputFormPr
                       cx="16"
                       cy="16"
                       r="14"
-                      stroke={idea.length > 500 ? "#ef4444" : idea.length > 400 ? "#f59e0b" : "#1d9bf0"}
+                      stroke={idea.length > 280 ? "#ef4444" : idea.length > 240 ? "#f59e0b" : "#1d9bf0"}
                       strokeWidth="3"
                       fill="none"
-                      strokeDasharray={`${(idea.length / 500) * 87.96} 87.96`}
+                      strokeDasharray={`${(idea.length / 280) * 87.96} 87.96`}
                       strokeLinecap="round"
                     />
                   </svg>
-                  {idea.length > 400 && (
-                    <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${idea.length > 500 ? 'text-red-600' : 'text-yellow-600'}`}>
-                      {500 - idea.length}
-                    </span>
-                  )}
                 </div>
+                {idea.length > 0 && (
+                  <span className={`text-sm font-semibold transition-colors ${idea.length > 280 ? 'text-red-600' : idea.length > 240 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                    {280 - idea.length}
+                  </span>
+                )}
               </div>
             </div>
             {error && (
